@@ -179,6 +179,13 @@ export function useDeleteAdvance(siteId: string) {
 }
 
 // ----- Bills -----
+export function useAllBills() {
+  return useQuery({
+    queryKey: ["all-bills"],
+    queryFn: () => api.get<(Bill & { site_name?: string })[]>("/bills"),
+  });
+}
+
 export function useBills(siteId: string) {
   return useQuery({
     queryKey: ["bills", siteId],
@@ -200,6 +207,7 @@ export function useAddBill(siteId: string) {
     }) => api.post<Bill>(`/sites/${siteId}/bills`, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bills", siteId] });
+      qc.invalidateQueries({ queryKey: ["all-bills"] });
       qc.invalidateQueries({ queryKey: ["site-summary", siteId] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
@@ -212,6 +220,7 @@ export function useUpdateBill(siteId: string) {
     mutationFn: ({ id, body }: { id: string; body: Partial<Bill> }) => api.put<Bill>(`/bills/${id}`, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bills", siteId] });
+      qc.invalidateQueries({ queryKey: ["all-bills"] });
       qc.invalidateQueries({ queryKey: ["site-summary", siteId] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
@@ -224,6 +233,7 @@ export function useDeleteBill(siteId: string) {
     mutationFn: (id: string) => api.del(`/bills/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bills", siteId] });
+      qc.invalidateQueries({ queryKey: ["all-bills"] });
       qc.invalidateQueries({ queryKey: ["site-summary", siteId] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },

@@ -151,11 +151,9 @@ export default function Login() {
         />
 
         <View style={styles.hint}>
-          <Icon name="information-circle-outline" size={16} color={colors.muted} />
+          <Icon name="lock-closed-outline" size={16} color={colors.muted} />
           <Text style={styles.hintText}>
-            {mode === "login"
-              ? "Supervisor? Thekedar dwara diye gaye phone aur password se login karein."
-              : "Owner (thekedar) ke liye. Supervisor account owner banayega."}
+            Yeh app aapka personal site hisaab khata hai. Apna phone aur password daalkar login karein.
           </Text>
         </View>
       </KeyboardAwareScrollView>

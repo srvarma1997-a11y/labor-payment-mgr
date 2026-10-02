@@ -1,0 +1,37 @@
+{
+  "summary": "Solo-contractor mode retest: all 39/39 pytest cases PASS (100%) including 2 new TestAllBills cases for the consolidated GET /api/bills endpoint (cross-site listing with site_name enrichment + 401 on missing token). Frontend mobile-first (390x844) end-to-end verified: owner 9000000001/test1234 logs in -> dashboard shows totals (Total Baaki ₹37,000, Billed ₹60,000, Received ₹23,000, Labour ₹600) with 2 site cards. Bottom tab bar shows exactly 3 tabs: Home, All Bills, Account (NO Team tab for solo contractor as required). /billing renders master All Bills ledger with cross-site aggregation (bills from both Green Valley Tower and TEST_UI_Site visible), 3 GST filter chips (Sabhi/GST/Without GST) toggle correctly, and dynamic site filter chips (All Sites + per-site chips). Account tab shows owner profile card (R / Ramesh Contractor / Owner-Thekedar / phone) and Logout button. No React Native red-screen errors. No deprecated expo-av/expo-barcode-scanner/expo-background-fetch packages. Only pre-existing non-blocking react-native-web warnings persist: shadow* and props.pointerEvents.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "console", "issues": ["react-native-web deprecation warnings 'shadow* -> boxShadow' and 'props.pointerEvents -> style.pointerEvents' persist (previously reported, non-blocking)"]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_sitehisab_api.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Silence the lingering react-native-web deprecation warnings (shadow*, pointerEvents) in shared UI primitives (Card, Button, Sheet).",
+    "(Optional) Enforce DATE_REGEX validation on body.date for AttendanceSave / AdvanceBody / BillBody (regex is defined but unused)."
+  ],
+  "critical_code_review_comments": [
+    "GET /api/bills (server.py:560-573) correctly scopes by owner's site_ids (owner) or user.site_ids (supervisor), joins site_name in Python, and sorts by date desc — no ObjectId leakage in response.",
+    "Owner tab layout (frontend/app/(owner)/_layout.tsx) correctly hides Team via href:null while keeping file in bundle; both NativeTabs and Tabs branches align on Home/Bills/Account.",
+    "billing.tsx client-side filters (selectedSite + filterGst) + totals derived via useMemo over filtered list — correct and performant for small bill counts; consider server-side filtering if bills grow large.",
+    "DATE_REGEX still unused (noted in iter_2) — malformed date strings can still land in Mongo.",
+    "FastAPI @app.on_event startup/shutdown still deprecated (noted in iter_1) — prefer lifespan context."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_sitehisab_api.py (added TestAllBills class — 2 cases)"
+  ],
+  "success_rate": {"backend": "100% (39/39)", "frontend": "100% (owner login, dashboard totals, All Bills tab w/ GST+site filters, Account tab + logout, Team tab correctly removed)"},
+  "seed_data_creation": "Transient TEST_Site_A / TEST_Lab1 / TEST_B1 / TEST_SUP_B / TEST_Sup etc. created and torn down inside pytest. Residual TEST_UI_Site_* and Green Valley Tower from previous iterations remain and were used to verify cross-site bill aggregation.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run tests with: pytest backend/tests/test_sitehisab_api.py -n 0 (xdist parallel breaks module-scoped workflow_state fixture). Owner creds 9000000001/test1234. Base URL from frontend/.env EXPO_PUBLIC_BACKEND_URL. Key testIDs: input-phone / input-password / submit-auth (login), site-card-<id> (dashboard), filter-all-gst / filter-gst / filter-nongst, site-filter-all / site-filter-<id>, all-bill-<id> (bills screen).",
+  "rca_of_issue": "N/A — solo-contractor refactor verified. Supervisor tab removed from owner UI, consolidated /api/bills endpoint behaves correctly, GST and site filters operate on cross-site data."
+}

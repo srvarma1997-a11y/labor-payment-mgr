@@ -186,6 +186,29 @@ class TestBills:
         assert any(b["id"] == workflow_state["bill_id"] for b in r.json())
 
 
+class TestAllBills:
+    """Consolidated /api/bills endpoint across all owner sites."""
+
+    def test_all_bills_lists_cross_site(self, base_url, owner_headers, workflow_state):
+        r = requests.get(f"{base_url}/api/bills", headers=owner_headers)
+        assert r.status_code == 200, r.text
+        bills = r.json()
+        assert isinstance(bills, list)
+        # Must contain the bill we created in TestBills
+        match = [b for b in bills if b["id"] == workflow_state["bill_id"]]
+        assert len(match) == 1
+        b = match[0]
+        # New fields enriched for all-bills view
+        assert b["site_id"] == workflow_state["site_id"]
+        assert "site_name" in b and b["site_name"] == "TEST_Site_A"
+        assert "balance" in b
+        assert b["balance"] == b["amount"] - b["payment_received"]
+
+    def test_all_bills_requires_auth(self, api_client, base_url):
+        r = api_client.get(f"{base_url}/api/bills")
+        assert r.status_code == 401
+
+
 class TestAdvances:
     def test_add_advance(self, base_url, owner_headers, workflow_state):
         r = requests.post(

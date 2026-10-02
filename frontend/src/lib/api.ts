@@ -1,6 +1,7 @@
+import { Platform } from "react-native";
 import { storage } from "@/src/utils/storage";
 
-const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
+const BASE = Platform.OS === "web" ? "" : (process.env.EXPO_PUBLIC_BACKEND_URL ?? "");
 export const TOKEN_KEY = "sitehisab_token";
 
 export class ApiError extends Error {

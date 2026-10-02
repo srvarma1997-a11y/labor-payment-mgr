@@ -15,9 +15,9 @@ export default function OwnerLayout() {
           <NativeTabs.Trigger.Icon sf="house.fill" />
           <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="team">
-          <NativeTabs.Trigger.Icon sf="person.2.fill" />
-          <NativeTabs.Trigger.Label>Team</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger name="billing">
+          <NativeTabs.Trigger.Icon sf="receipt.fill" />
+          <NativeTabs.Trigger.Label>Bills</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="account">
           <NativeTabs.Trigger.Icon sf="person.crop.circle" />
@@ -47,12 +47,16 @@ export default function OwnerLayout() {
         options={{ title: "Home", tabBarIcon: ({ color }) => <Icon name="home" size={24} color={color} /> }}
       />
       <Tabs.Screen
-        name="team"
-        options={{ title: "Team", tabBarIcon: ({ color }) => <Icon name="people" size={24} color={color} /> }}
+        name="billing"
+        options={{ title: "All Bills", tabBarIcon: ({ color }) => <Icon name="receipt" size={24} color={color} /> }}
       />
       <Tabs.Screen
         name="account"
         options={{ title: "Account", tabBarIcon: ({ color }) => <Icon name="person-circle" size={24} color={color} /> }}
+      />
+      <Tabs.Screen
+        name="team"
+        options={{ href: null }}
       />
     </Tabs>
   );

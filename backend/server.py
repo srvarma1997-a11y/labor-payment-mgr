@@ -557,6 +557,22 @@ async def list_bills(site_id: str, user: dict = Depends(current_user)):
     return [bill_public(b) async for b in cursor]
 
 
+@api_router.get("/bills")
+async def list_all_bills(user: dict = Depends(current_user)):
+    if user["role"] == "owner":
+        site_ids = [s["_id"] async for s in db.sites.find({"owner_id": user["_id"], "deleted_at": None})]
+    else:
+        site_ids = [oid(s) for s in user.get("site_ids", [])]
+    cursor = db.bills.find({"site_id": {"$in": site_ids}, "deleted_at": None}).sort("date", -1)
+    sites_map = {str(s["_id"]): s["name"] async for s in db.sites.find({"_id": {"$in": site_ids}})}
+    bills = []
+    async for b in cursor:
+        bp = bill_public(b)
+        bp["site_name"] = sites_map.get(str(b["site_id"]), "Site")
+        bills.append(bp)
+    return bills
+
+
 @api_router.put("/bills/{bill_id}")
 async def update_bill(bill_id: str, body: BillUpdate, user: dict = Depends(current_user)):
     bill = await db.bills.find_one({"_id": oid(bill_id), "deleted_at": None})
@@ -714,7 +730,7 @@ app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
