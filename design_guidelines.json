@@ -1,0 +1,163 @@
+{
+  "app_name": "SiteHisab",
+  "personality": "1 iOS-Native Clean",
+  "personality_one_liner": "A highly legible, high-contrast utilitarian ledger designed for fast, error-free field entry under bright sunlight.",
+  "color": {
+    "surface": "#F2F2F7",
+    "onSurface": "#1C1C1E",
+    "surfaceSecondary": "#FFFFFF",
+    "onSurfaceSecondary": "#1C1C1E",
+    "surfaceTertiary": "#E5E5EA",
+    "onSurfaceTertiary": "#3A3A3C",
+    "surfaceInverse": "#1C1C1E",
+    "onSurfaceInverse": "#F2F2F7",
+    "brand": "#20563E",
+    "onBrand": "#FFFFFF",
+    "brandPrimary": "#20563E",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#347958",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#E7F3ED",
+    "onBrandTertiary": "#20563E",
+    "success": "#34C759",
+    "onSuccess": "#FFFFFF",
+    "warning": "#FFCC00",
+    "onWarning": "#1C1C1E",
+    "error": "#FF3B30",
+    "onError": "#FFFFFF",
+    "info": "#000000",
+    "onInfo": "#FFFFFF",
+    "border": "#E5E5EA",
+    "borderStrong": "#C7C7CC",
+    "divider": "#C7C7CC",
+    "muted": "#8E8E93"
+  },
+  "typography": {
+    "displayFontFamily": "SpaceGrotesk",
+    "textFontFamily": "PlusJakartaSans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous vertical rhythm. List items minimum 56pt height for easy tapping by non-technical users on the field.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "1",
+  "navigation": "bottom_tabs",
+  "icon_set": "Ionicons",
+  "glassmorphism": {
+    "enabled": "true",
+    "do's": [
+      "Apply to bottom tab bar and sticky headers over scrolling content on iOS."
+    ],
+    "dont's": [
+      "Avoid on low-end Android devices (use solid surfaceSecondary fallback). Do not use on list rows or form inputs."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Auth",
+      "purpose": "Role selection (Owner/Supervisor) and phone number login.",
+      "states": {
+        "loading": "Centered spinner",
+        "empty": "N/A",
+        "error": "Toast or inline text showing invalid credentials"
+      },
+      "layout": "Clean white screen, large app logo/title. Two massive cards for 'Login as Owner' and 'Login as Supervisor' with clear iconography, followed by a simple numeric OTP entry. Safe area respected."
+    },
+    {
+      "name": "OwnerDashboard",
+      "purpose": "High-level overview of all 4+ construction sites, total labour count, and aggregated billing balances.",
+      "states": {
+        "loading": "Skeleton of summary cards",
+        "empty": "Empty state illustration with 'Add your first site' CTA",
+        "error": "Error message with 'Tap to Retry' button"
+      },
+      "layout": "Large numeric summary at the top (Total Billed, Total Paid, Balance). Below, a single-column list of Site Cards. Each card shows Site Name, Active Labour today, and an 'Outstanding ₹' metric. Uses SpaceGrotesk for all monetary and numeric values for structural clarity."
+    },
+    {
+      "name": "SiteDetail_SupervisorView",
+      "purpose": "The daily workspace for a supervisor to view site status and initiate daily actions.",
+      "states": {
+        "loading": "Skeleton of site metrics",
+        "empty": "N/A (Metrics will show 0)",
+        "error": "Error message with 'Retry' button"
+      },
+      "layout": "Hero background image of a construction site with a gradient scrim and site name overlaid. Below: large quick-action tiles for 'Mark Attendance', 'Add Advance Payment', and 'Site Billing'. A persistent sticky CTA at the bottom to 'Upload Daily Report' to the owner."
+    },
+    {
+      "name": "LabourAttendance",
+      "purpose": "Rapid entry of daily attendance (Full, Half, Absent) for all labourers on a site.",
+      "states": {
+        "loading": "Skeleton list of labourers",
+        "empty": "Illustration of empty hard hats with 'Add Labourers' CTA",
+        "error": "Error message with 'Retry' button"
+      },
+      "layout": "Sticky header with current Date selector. A flat list of labourers. Each row contains Labour Name, Daily Wage, and a horizontal Segmented Control (Full | Half | Absent). A sticky CTA at the bottom 'Save Today's Attendance' ensures quick commitment."
+    },
+    {
+      "name": "BillingLedger",
+      "purpose": "Track GST/Non-GST bills, amounts, and payments received for a specific site.",
+      "states": {
+        "loading": "Skeleton of ledger entries",
+        "empty": "Illustration of an empty ledger with 'Add First Bill' CTA",
+        "error": "Error message with 'Retry' button"
+      },
+      "layout": "Summary card at top (Total Billed, Received, Balance). Followed by a chronological list of bills. Tapping 'Add Bill' opens a bottom sheet with fields: Bill No, Amount, GST Toggle (Switch), and Payment Received. Submitting adds it to the ledger."
+    }
+  ],
+  "images": {
+    "site_hero_bg": {
+      "url": "https://images.unsplash.com/photo-1599707254554-027aeb4deacd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwxfHxjb25zdHJ1Y3Rpb24lMjBzaXRlJTIwYnVpbGRpbmd8ZW58MHx8fHwxNzkwOTI1MDM2fDA&ixlib=rb-4.1.0&q=85",
+      "dark": "https://images.unsplash.com/photo-1527335988388-b40ee248d80c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwyfHxjb25zdHJ1Y3Rpb24lMjBzaXRlJTIwYnVpbGRpbmd8ZW58MHx8fHwxNzkwOTI1MDM2fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Construction site background"
+    },
+    "empty_labour": {
+      "url": "https://images.unsplash.com/photo-1509453721491-c3af5961df76?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA5MzZ8MHwxfHNlYXJjaHwzfHxjb25zdHJ1Y3Rpb24lMjB3b3JrZXIlMjBoZWxtZXR8ZW58MHx8fHwxNzkwOTI1NDI5fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Yellow hard hats indicating empty workforce"
+    },
+    "empty_ledger": {
+      "url": "https://images.unsplash.com/photo-1595014361663-4c3e702f9c44?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwyfHxhY2NvdW50aW5nJTIwbGVkZ2VyJTIwbm90ZWJvb2t8ZW58MHx8fHwxNzkwOTI1MDM2fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Empty accounting ledger"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly adhere to the '1 iOS-Native Clean' personality rules. High contrast, large text, and structural layout are critical for outdoor usage.",
+    "Use SpaceGrotesk (display font) specifically for all monetary values, phone numbers, and large numeric counters. Use PlusJakartaSans for all reading text and labels.",
+    "Bilingual requirement: Ensure key labels are bilingual (e.g., 'Attendance / हाज़िरी', 'Advances / एडवांस') or accommodate simple Hindi strings if fully translated.",
+    "For the Attendance screen, use a Segmented Control pattern (Full / Half / Absent) on each labourer's row to allow rapid, 1-tap data entry. DO NOT use dropdowns or multiple screens per labourer.",
+    "Ensure 'Sticky primary CTAs' are implemented on all scrolling data-entry screens (e.g., 'Save Attendance', 'Upload Report') above the home indicator.",
+    "Ensure monetary values properly format in Indian Rupees (₹).",
+    "Any text overlaid on 'site_hero_bg' MUST use a gradient-to-dark scrim pattern (top-to-bottom transparent to ≥70% surfaceInverse) to guarantee contrast.",
+    "For low-end Android field devices, implement graceful fallback for glassmorphism to solid 'surfaceSecondary'."
+  ]
+}

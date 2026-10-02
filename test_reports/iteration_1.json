@@ -1,0 +1,37 @@
+{
+  "summary": "Full backend + frontend testing of SiteHisab MVP. Backend: all 34 pytest tests pass (100%) covering auth, owner/supervisor RBAC, sites, labourers, attendance (upsert + daily_reports), bills (balance/GST), advances, payroll aggregation, dashboard, summary and supervisor isolation (403 on /dashboard, /auth/supervisors, unassigned site access). Frontend (mobile-first Expo web, 390x844): verified owner registration->login flow, dashboard totals + site cards + add-site, site workspace all 6 quick-action tiles, labourers add, attendance mark + Save & Upload (shows 'Uploaded' + '1 present ₹600'), billing add with GST toggle (Non-GST tag + balance ₹7,000 computed), advances add, payroll row shows Mazdoori ₹600 - Advance ₹500 = Net ₹100, daily reports list populated after attendance save, Team tab create supervisor with site assignment, logout, supervisor login shows only Sites+Account tabs (no Team) and only assigned site. No React Native red-screen errors. No deprecated packages (expo-av/expo-barcode-scanner/expo-background-fetch) detected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "console", "issues": ["React Native Web deprecation warnings: 'shadow* style props are deprecated. Use boxShadow.' and 'props.pointerEvents is deprecated. Use style.pointerEvents.' - non-blocking but will break in future RN-Web versions."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_sitehisab_api.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Low) Replace deprecated RN-Web style props: shadow* -> boxShadow and props.pointerEvents -> style.pointerEvents in shared UI components (likely Card/Sheet/Button in /app/frontend/src/components/ui).",
+    "(Note) Backend pytest.ini forces -n 2 --dist loadscope but tests share state via module-scoped fixture. Running with that default causes cross-worker KeyErrors. Current suite must be run with `-n 0`. Either (a) restructure fixtures to be worker-independent, or (b) relax addopts. Documented inside the test file."
+  ],
+  "critical_code_review_comments": [
+    "server.py uses deprecated FastAPI @app.on_event startup/shutdown handlers; prefer lifespan context.",
+    "No pagination on list endpoints (bills, labourers, advances) - fine for MVP, consider for scale.",
+    "oid() raises 400 for malformed site_id in get_accessible_site before 404 - acceptable."
+  ],
+  "updated_files": [
+    "/app/backend/tests/__init__.py",
+    "/app/backend/tests/conftest.py",
+    "/app/backend/tests/test_sitehisab_api.py"
+  ],
+  "success_rate": {"backend": "100% (34/34)", "frontend": "100% core flows verified (owner reg/login, dashboard, site CRUD, labourers, attendance+report, billing+GST, advances, payroll, team supervisor create, logout, supervisor login/isolation)"},
+  "seed_data_creation": "Tests create and self-clean TEST_* prefixed sites/labourers/bills/advances/supervisors. One leftover TEST_UI_Site_* site remains from the frontend run (not auto-deleted) along with its labourer, bill, advance, attendance record and a TEST_UI_Sup supervisor. Safe to leave or clean manually.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend tests MUST be run with `pytest backend/tests/test_sitehisab_api.py -n 0` to override the project's parallel xdist default (module-scoped workflow_state fixture). Owner creds: 9000000001/test1234. Frontend quick-action tiles for 'billing' and 'reports' are below the fold on 390x667+ viewports; always scroll_into_view_if_needed before clicking them.",
+  "rca_of_issue": "N/A - no blocking issues found. Minor: frontend test needed scroll_into_view for action-billing/action-reports tiles (not a product bug)."
+}
