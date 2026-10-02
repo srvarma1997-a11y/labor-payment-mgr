@@ -5,6 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import re
 from pathlib import Path
 from pydantic import BaseModel
 from typing import List, Optional, Annotated, Literal
@@ -12,6 +13,17 @@ from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 import bcrypt
 import jwt
+
+MONTH_REGEX = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+DATE_REGEX = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
+
+
+def validate_month_param(m: Optional[str]) -> str:
+    if not m:
+        return current_month()
+    if not MONTH_REGEX.match(m):
+        raise HTTPException(400, "Invalid month format. Expected YYYY-MM")
+    return m
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -241,12 +253,25 @@ async def me(user: dict = Depends(current_user)):
 # ---------------------------------------------------------------------------
 # Supervisors (owner only)
 # ---------------------------------------------------------------------------
+async def validate_owner_site_ids(owner_id: ObjectId, site_ids: List[str]) -> List[ObjectId]:
+    validated = []
+    for s in site_ids:
+        site_oid = oid(s)
+        site = await db.sites.find_one({"_id": site_oid, "owner_id": owner_id, "deleted_at": None})
+        if not site:
+            raise HTTPException(400, f"Site {s} not found or you do not own it")
+        validated.append(site_oid)
+    return validated
+
+
 @api_router.post("/auth/supervisors", status_code=201)
 async def create_supervisor(body: SupervisorCreate, owner: dict = Depends(require_roles("owner"))):
     phone = body.phone.strip()
+    if len(body.password) < 4:
+        raise HTTPException(400, "Password must be at least 4 characters")
     if await db.users.find_one({"phone": phone}):
         raise HTTPException(409, "Phone number already registered")
-    site_ids = [oid(s) for s in body.site_ids]
+    site_ids = await validate_owner_site_ids(owner["_id"], body.site_ids)
     doc = {"name": body.name.strip(), "phone": phone,
            "password_hash": hash_password(body.password), "role": "supervisor",
            "site_ids": site_ids, "disabled": False, "created_at": now_utc(),
@@ -271,9 +296,11 @@ async def update_supervisor(sup_id: str, body: SupervisorUpdate, owner: dict = D
     if body.name is not None:
         update["name"] = body.name.strip()
     if body.password:
+        if len(body.password) < 4:
+            raise HTTPException(400, "Password must be at least 4 characters")
         update["password_hash"] = hash_password(body.password)
     if body.site_ids is not None:
-        update["site_ids"] = [oid(s) for s in body.site_ids]
+        update["site_ids"] = await validate_owner_site_ids(owner["_id"], body.site_ids)
     if body.disabled is not None:
         update["disabled"] = body.disabled
     if update:
@@ -483,7 +510,8 @@ async def list_advances(site_id: str, month: Optional[str] = None, user: dict = 
     await get_accessible_site(site_id, user)
     q = {"site_id": oid(site_id), "deleted_at": None}
     if month:
-        q["date"] = {"$regex": f"^{month}"}
+        m = validate_month_param(month)
+        q["date"] = {"$regex": f"^{re.escape(m)}"}
     cursor = db.advances.find(q).sort("date", -1)
     return [{"id": str(a["_id"]), "labourer_id": str(a["labourer_id"]), "amount": a["amount"],
              "date": a["date"], "note": a.get("note", "")} async for a in cursor]
@@ -568,12 +596,13 @@ async def site_billing_totals(site_id: ObjectId) -> dict:
 
 
 async def site_month_labour(site_id: ObjectId, month: str) -> dict:
+    month = validate_month_param(month)
     labs = {}
     async for l in db.labourers.find({"site_id": site_id}):
         labs[str(l["_id"])] = l
     earned = 0.0
     day_count = 0.0
-    async for a in db.attendance.find({"site_id": site_id, "date": {"$regex": f"^{month}"}}):
+    async for a in db.attendance.find({"site_id": site_id, "date": {"$regex": f"^{re.escape(month)}"}}):
         lab = labs.get(str(a["labourer_id"]))
         if not lab:
             continue
@@ -581,7 +610,7 @@ async def site_month_labour(site_id: ObjectId, month: str) -> dict:
         earned += val * lab.get("daily_wage", 0)
         day_count += val
     advances = 0.0
-    async for adv in db.advances.find({"site_id": site_id, "deleted_at": None, "date": {"$regex": f"^{month}"}}):
+    async for adv in db.advances.find({"site_id": site_id, "deleted_at": None, "date": {"$regex": f"^{re.escape(month)}"}}):
         advances += adv.get("amount", 0)
     return {"earned": earned, "day_count": day_count, "advances": advances,
             "net_payable": earned - advances}
@@ -627,14 +656,14 @@ async def dashboard(user: dict = Depends(require_roles("owner"))):
 @api_router.get("/sites/{site_id}/summary")
 async def site_summary(site_id: str, month: Optional[str] = None, user: dict = Depends(current_user)):
     site = await get_accessible_site(site_id, user)
-    month = month or current_month()
+    m = validate_month_param(month)
     billing = await site_billing_totals(oid(site_id))
-    labour = await site_month_labour(oid(site_id), month)
+    labour = await site_month_labour(oid(site_id), m)
     lab_count = await db.labourers.count_documents({"site_id": oid(site_id), "deleted_at": None})
     today = now_utc().strftime("%Y-%m-%d")
     report = await db.daily_reports.find_one({"site_id": oid(site_id), "date": today})
     return {
-        "site": site_public(site), "month": month,
+        "site": site_public(site), "month": m,
         "billing": billing, "labour": labour, "labour_count": lab_count,
         "today_present": report.get("present_count", 0) if report else 0,
         "today_uploaded": bool(report),
@@ -644,7 +673,7 @@ async def site_summary(site_id: str, month: Optional[str] = None, user: dict = D
 @api_router.get("/sites/{site_id}/payroll")
 async def site_payroll(site_id: str, month: Optional[str] = None, user: dict = Depends(current_user)):
     await get_accessible_site(site_id, user)
-    month = month or current_month()
+    m = validate_month_param(month)
     labs = {}
     order = []
     async for l in db.labourers.find({"site_id": oid(site_id), "deleted_at": None}).sort("created_at", 1):
@@ -653,7 +682,7 @@ async def site_payroll(site_id: str, month: Optional[str] = None, user: dict = D
                                "full_days": 0, "half_days": 0, "day_value": 0.0,
                                "earned": 0.0, "advances": 0.0}
         order.append(str(l["_id"]))
-    async for a in db.attendance.find({"site_id": oid(site_id), "date": {"$regex": f"^{month}"}}):
+    async for a in db.attendance.find({"site_id": oid(site_id), "date": {"$regex": f"^{re.escape(m)}"}}):
         lid = str(a["labourer_id"])
         if lid not in labs:
             continue
@@ -662,7 +691,7 @@ async def site_payroll(site_id: str, month: Optional[str] = None, user: dict = D
         elif a["status"] == "half":
             labs[lid]["half_days"] += 1
         labs[lid]["day_value"] += a.get("day_value", 0)
-    async for adv in db.advances.find({"site_id": oid(site_id), "deleted_at": None, "date": {"$regex": f"^{month}"}}):
+    async for adv in db.advances.find({"site_id": oid(site_id), "deleted_at": None, "date": {"$regex": f"^{re.escape(m)}"}}):
         lid = str(adv["labourer_id"])
         if lid in labs:
             labs[lid]["advances"] += adv.get("amount", 0)
@@ -677,7 +706,7 @@ async def site_payroll(site_id: str, month: Optional[str] = None, user: dict = D
         "advances": sum(r["advances"] for r in rows),
         "net_payable": sum(r["net_payable"] for r in rows),
     }
-    return {"month": month, "rows": rows, "totals": totals}
+    return {"month": m, "rows": rows, "totals": totals}
 
 
 # ---------------------------------------------------------------------------

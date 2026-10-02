@@ -333,6 +333,34 @@ class TestSupervisorRBAC:
 
 
 # -------------------------------------------------------------------------- cleanup last
+class TestSecurityControls:
+    def test_assign_foreign_site_rejected(self, base_url, owner_headers):
+        # random valid objectid that owner does not own
+        foreign_id = "507f1f77bcf86cd799439011"
+        r = requests.post(
+            f"{base_url}/api/auth/supervisors",
+            headers=owner_headers,
+            json={"name": "HackerSup", "phone": "9998887766", "password": "pass",
+                  "site_ids": [foreign_id]})
+        assert r.status_code == 400
+        assert "not found or you do not own it" in r.text
+
+    def test_invalid_month_format_rejected(self, base_url, owner_headers, workflow_state):
+        # invalid regex attempt or bad month
+        r = requests.get(
+            f"{base_url}/api/sites/{workflow_state['site_id']}/payroll?month=.*",
+            headers=owner_headers)
+        assert r.status_code == 400
+
+    def test_short_password_rejected(self, base_url, owner_headers):
+        r = requests.post(
+            f"{base_url}/api/auth/supervisors",
+            headers=owner_headers,
+            json={"name": "ShortPw", "phone": "9998887755", "password": "12",
+                  "site_ids": []})
+        assert r.status_code == 400
+
+
 class TestCleanup:
     def test_delete_bill(self, base_url, owner_headers, workflow_state):
         r = requests.delete(f"{base_url}/api/bills/{workflow_state['bill_id']}",

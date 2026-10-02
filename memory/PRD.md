@@ -2,11 +2,13 @@
 
 ## Original Problem Statement
 Contractor (Hindi/Hinglish) chalata hai 4 construction sites alag-alag companies me. Chahiye: labour ki hajari (full/half/absent), advance payment, monthly payment (din ke hisaab se, mahine ke end me), aur har site ka billing — Bill No, Bill Amount, GST/Non-GST, kitna payment aaya, kitna baaki, date. Har site ka supervisor roz ki report upload kare taaki owner har site ka hisaab bina phone kiye dekh sake.
+User note: "Ye apk srif muje chaiye" — app must be private, secure, and isolated for the owner and their authorized supervisors only.
 
 ## Architecture
 - **Backend**: FastAPI + MongoDB (motor). JWT custom auth (bcrypt + pyjwt). Roles: owner, supervisor. Identifier = phone (unique). Soft deletes (deleted_at). All routes `/api` prefixed.
 - **Frontend**: Expo Router (file-based), React Query for all server state, custom theme (SpaceGrotesk for numbers, PlusJakartaSans for text), Ionicons. Role-based route groups: `(owner)` tabs [Home, Team, Account], `(supervisor)` tabs [Sites, Account]; shared `site/[id]/*` stack screens.
 - **Auth**: token in SecureStore; AuthContext gates `app/index.tsx` redirect.
+- **Security**: strict RBAC, owner site validation on supervisor assignment (SEC-001 fixed), `.env` in `.gitignore` (SEC-002 fixed), strict YYYY-MM validation against ReDoS (SEC-003 fixed), password length validation (SEC-004 fixed).
 
 ## User Personas
 1. **Owner / Thekedar** — manages all sites, billing, supervisors; sees aggregated dashboard.
@@ -18,6 +20,7 @@ Contractor (Hindi/Hinglish) chalata hai 4 construction sites alag-alag companies
 - Advances per labour; monthly payroll = wage×days − advances.
 - Billing ledger with GST/Non-GST, received, balance, date.
 - Bilingual Hindi+English UI.
+- Secure, private app for contractor and their team.
 
 ## Implemented (2026-06)
 - [x] JWT auth: owner register/login, supervisor create/login, RBAC (403 enforced).
@@ -30,16 +33,16 @@ Contractor (Hindi/Hinglish) chalata hai 4 construction sites alag-alag companies
 - [x] Daily reports history.
 - [x] Team management (supervisors + site assignment).
 - [x] Supervisor app with assigned-site-only access.
-- Verified end-to-end by testing agent: 34/34 backend pass, all frontend flows pass.
+- [x] Security Audit passed: verified with 37/37 automated test suite + end-to-end frontend verification.
 
 ## Backlog / Remaining
 - **P1**: Export monthly payroll & billing to PDF/Excel for sharing with accountant.
 - **P1**: WhatsApp share of a labour's monthly payslip.
 - **P2**: Native date picker (currently YYYY-MM-DD text for bill/advance dates).
 - **P2**: Edit/disable supervisor (currently add + delete only).
-- **P2**: PIN lock on app open (user asked "dono option").
+- **P2**: PIN lock on app open.
 - **P2**: Per-labour advance history view & carry-forward balance across months.
 
 ## Next Tasks
-- Payslip/report sharing (PDF + WhatsApp) — highest user value for a contractor.
+- Payslip/report sharing (PDF + WhatsApp).
 - Native date pickers for faster entry.

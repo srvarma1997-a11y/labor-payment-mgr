@@ -1,0 +1,33 @@
+{
+  "summary": "Security audit retest: all 37 pytest cases PASS (100%) including 3 new TestSecurityControls cases — SEC-001 (foreign site_id on supervisor create rejected 400), SEC-003 (invalid month formats '.*', '2024-13', '2024/01' all rejected 400 on /payroll /summary /advances; valid '2026-01' returns 200), SEC-004 (password <4 chars rejected 400). SEC-002 verified: /app/.gitignore excludes .env, *.env, backend/.env, frontend/.env. Frontend mobile-first (390x844) retested end-to-end: owner (9000000001/test1234) logs in -> dashboard renders totals (₹37,000 outstanding), 2 site cards, Home/Team/Account tabs visible. Logout works via Account tab. New supervisor created via API with site_id=SEC_Site1; UI login succeeds -> supervisor view shows ONLY 'SEC_Site1' (assigned), NOT 'SEC_Other1' (unassigned), tabs are Sites+Account only (NO Team tab). RBAC & isolation fully enforced. No React Native red-screen errors. No deprecated expo-av/expo-barcode-scanner/expo-background-fetch packages detected. Only known non-blocking warnings remain: 'shadow* style props deprecated' and 'props.pointerEvents deprecated' from react-native-web (reported in iteration_1).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "console", "issues": ["Residual react-native-web warnings 'shadow* -> boxShadow' and 'props.pointerEvents -> style.pointerEvents' (previously reported, non-blocking)"]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_sitehisab_api.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional) Address lingering react-native-web deprecation warnings (shadow*, pointerEvents) in shared UI components.",
+    "(Optional) Add explicit validation that date fields on attendance/advance/bill endpoints also follow YYYY-MM-DD (DATE_REGEX exists but is unused in handlers)."
+  ],
+  "critical_code_review_comments": [
+    "SEC fixes are correctly applied: validate_owner_site_ids() runs on BOTH create and update supervisor; MONTH_REGEX enforced in /payroll, /summary, /advances; password length checked on create and update supervisor; .env patterns covered in .gitignore.",
+    "DATE_REGEX is defined in server.py but never used — body.date on AttendanceSave/AdvanceBody/BillBody is passed raw into Mongo (used only as string equality / regex prefix with re.escape, so no injection risk, but malformed dates can still be stored).",
+    "FastAPI @app.on_event startup/shutdown remain deprecated — prefer lifespan context (noted in iteration_1)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (37/37)", "frontend": "100% (owner login+dashboard, logout, supervisor login+site isolation, no Team tab for supervisor)"},
+  "seed_data_creation": "Temporary SEC_Site1, SEC_Other1 sites and SEC_Sup1 supervisor created & deleted during the UI retest. Residual TEST_UI_* data from iteration_1 still present (safe to leave).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run backend tests with: pytest backend/tests/test_sitehisab_api.py -n 0 (xdist parallel breaks module-scoped workflow_state fixture). Owner creds 9000000001/test1234. Frontend login uses testIDs: input-phone, input-password, submit-auth. Supervisor UI exposes only 'Sites' + 'Account' tabs; owner also has 'Team'. Base URL from frontend/.env EXPO_PUBLIC_BACKEND_URL.",
+  "rca_of_issue": "N/A — all security fixes verified. Earlier UI script failure during this iteration was due to text-based selector matching the 'Login' segmented-control tab instead of the submit button; resolved by switching to [data-testid=\"submit-auth\"]."
+}
